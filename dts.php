@@ -1,3 +1,13 @@
+<?php require_once 'classes.php';
+
+  if (isset($_GET['task_id'])) {
+    $taskId = $_GET['task_id']; 
+    $userTask = new Task($conn);
+    $task = $userTask->getTaskById($taskId); 
+  } 
+?> 
+
+
 <!DOCTYPE html>
 <html lang="fr">
 <head>
@@ -9,7 +19,8 @@
 
 </head>
 <body>
-    <button class="back-button">
+  
+    <button class="back-button" id="back">
         <i class="fas fa-arrow-left"></i>
         Back to tasks
     </button>
@@ -17,22 +28,28 @@
     <div class="task-details-container">
         <div class="taskHeader">
             <div>
-                <h1 class="taskTitle">Title of the task</h1>
-                <span class="taskType basic">Basic</span>
+                <h1 class="taskTitle"><?php echo $task['title'] ?></h1>
+                <span class="taskType"><?php echo $task['type'] ?></span>
             </div>
-            <select class="status-selector">
-                <option value="todo">To do</option>
-                <option value="in-progress">In doing </option>
-                <option value="done">Completed</option>
+            <select class="status-selector" name="status" form="statusForm">
+                <option value="<?php echo $task['status']; ?>"><?php echo $task['status']; ?></option>
+                <option value="To Do">To Do</option>
+                <option value="In Progress">In Progress</option>
+                <option value="Done">Done</option>
             </select>
+            <form id="statusForm" action="" method="POST">
+                <input type="hidden" name="task_id" value="<?php echo $task['id']; ?>">
+                <button type="submit" style="display:none;"></button>
+            </form>
+
         </div>
 
         <div class="taskInfo">
-            <div class="info-item">
+            <div class="infoItem">
                 <i class="far fa-user"></i>
                 <div>
                     <span style="color: #999;">Assigne to</span>&nbsp;
-                    <strong style="color: #555;">Mohamed</strong>
+                    <strong style="color: #555;"><?php echo $task['name'] ?></strong>
                 </div>  
             </div>
 
@@ -40,7 +57,7 @@
                 <i class="far fa-calendar"></i>
                 <div>
                     <span style="color: #999;">Create at </span>&nbsp;
-                    <strong style="color: #555;">25, Dec 2024</strong>
+                    <strong style="color: #555;"><?php echo date('Y-m-d', strtotime($task['created_at'])); ?></strong>
                 </div>
             </div>
         </div>
@@ -48,18 +65,21 @@
         <div class="description-section">
             <h2 class="section-title">Description</h2>
             <div class="description-content">
-                <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.</p>
-                <br>
-                <p>Points clés :</p>
-                <ul style="margin-left: 20px; margin-top: 10px;">
-                    <li>Lorem ipsum dolor sit amet</li>
-                    <li>Consectetur adipiscing elit.</li>
-                    <li>Sed do eiusmod tempor incididunt.</li>
-                </ul>
+              <p><?php echo $task['description'] ?></p>
             </div>
         </div>
     </div>
 
-    
+    <script>
+            let back = document.getElementById('back');
+            back.addEventListener('click',()=>{
+              window.location.href='usertask.php';
+            })
+          let select = document.querySelector('.status-selector');
+          let statusForm = document.getElementById('statusForm');
+              select.addEventListener('change', ()=> {
+                statusForm.submit();
+              });
+    </script>
 </body>
 </html>

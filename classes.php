@@ -50,7 +50,6 @@ class Users{
                 $user = $stmt->fetch(PDO::FETCH_ASSOC);
                 return [
                     'verify' => true,
-                    'message' => "Bienvenue " . $user['name'],
                     'user_id' => $user['id']
                 ];
             } else {
@@ -67,20 +66,17 @@ class Users{
         }
   }
 }
-
-// --------------------------------- Insert users ----------------------------------
-// $user = new Users($conn);
-// $user->addUser('mohamed');
-// $user->addUser('omar');
-// $user->addUser('souhail');
-
-// --------------------------------- Login user -----------------------------------
-
-session_start();
-
+// ------------------------ Start connection with database -----------------------
 $db = new Database();
 $conn = $db->get_connection();
-
+// --------------------------------- Register ------------------------------------
+if(isset($_POST['register'])){
+  $nameNewUser = $_POST['username'];
+  $user = new Users($conn);
+  $user->addUser($nameNewUser);
+}
+// --------------------------------- Login user -----------------------------------
+session_start();
 $message = '';
 
 if(isset($_POST['login'])) {
@@ -102,51 +98,105 @@ class Task {
   private $connection;
   protected $taskType;
 
-  public function __construct($conn){
-      $this->connection = $conn;
-  }
+      public function __construct($conn){
+          $this->connection = $conn;
+      }
 
-  public function addTask($title, $assigned_to, $description) {
-    try {
-        $checkUser = "SELECT id FROM users WHERE id = :assigned_to";
-        $stmt = $this->connection->prepare($checkUser);
-        $stmt->execute(['assigned_to' => $assigned_to]); 
-        
-        if ($stmt->rowCount() == 0) {
-            throw new Exception("user assigned not found");
+      public function addTask($title, $assigned_to, $description) {
+        try {
+            $checkUser = "SELECT id FROM users WHERE id = :assigned_to";
+            $stmt = $this->connection->prepare($checkUser);
+            $stmt->execute(['assigned_to' => $assigned_to]); 
+            
+            if ($stmt->rowCount() == 0) {
+                throw new Exception("user assigned not found");
+            }
+            $sql = "INSERT INTO tasks (title,type, assigned_to, description, created_at) 
+                    VALUES (:title,:type, :assigned_to, :description, NOW())";
+
+            $stmt = $this->connection->prepare($sql);
+            $stmt->execute([
+                'title' => $title,
+                'type' => $this->taskType,
+                'assigned_to' => $assigned_to,    
+                'description' => $description
+            ]);
+
+            return true;
+
+        } catch (Exception $e) {
+            echo "Erreur: " . $e->getMessage();
+            return false;
         }
-        $sql = "INSERT INTO tasks (title,type, assigned_to, description, created_at) 
-                VALUES (:title,:type, :assigned_to, :description, NOW())";
+      }
+      public function getTasks() {
+            $sql = "SELECT 
+                          t.id, t.type, t.title, t.status, t.assigned_to, u.id, u.name
+                    FROM 
+                          tasks  AS t
+                    LEFT JOIN 
+                          users AS u
+                    ON 
+                          t.assigned_to = u.id";
+            $stmt = $this->connection->prepare($sql);
+            $stmt->execute();
+            return $stmt->fetchAll(PDO::FETCH_ASSOC); 
+        }
+      public function getTasksByUser($userId,$username) {
+            $sql = "SELECT 
+                        t.id, t.type, t.title, t.status, t.assigned_to, u.name 
+                    FROM 
+                        tasks AS t
+                    LEFT JOIN 
+                        users AS u
+                    ON 
+                        t.assigned_to = u.id
+                    WHERE 
+                        t.assigned_to = ?
+                        AND 
+                        u.name = ?
+                    ";
+        
+            $stmt = $this->connection->prepare($sql);
+            $stmt->bindValue(1, $userId, PDO::PARAM_INT);
+            $stmt->bindValue(2, $username, PDO::PARAM_STR);
+            $stmt->execute();
+            return $stmt->fetchAll(PDO::FETCH_ASSOC);
+        }
 
-        $stmt = $this->connection->prepare($sql);
-        $stmt->execute([
-            'title' => $title,
-            'type' => $this->taskType,
-            'assigned_to' => $assigned_to,    
-            'description' => $description
-        ]);
+      public function getTaskById($taskId) {
+            $sql = "SELECT 
+                        t.id, t.type, t.title, t.status, t.description, t.created_at, u.name
+                    FROM 
+                        tasks AS t
+                    LEFT JOIN 
+                        users AS u
+                    ON 
+                        t.assigned_to = u.id
+                    WHERE 
+                        t.id = ?";
+        
+            $stmt = $this->connection->prepare($sql);
+            $stmt->bindValue(1, $taskId, PDO::PARAM_INT);
+            $stmt->execute();
+            return $stmt->fetch(PDO::FETCH_ASSOC); 
+        }
+      public function updateTaskStatus($taskId, $newStatus) {
+            $sql = "UPDATE tasks SET status = ? WHERE id = ?";
+            $stmt = $this->connection->prepare($sql);
+            $stmt->bindValue(1, $newStatus, PDO::PARAM_STR);
+            $stmt->bindValue(2, $taskId, PDO::PARAM_INT);
+            return $stmt->execute();
+        }
 
-        return true;
-
-    } catch (Exception $e) {
-        echo "Erreur: " . $e->getMessage();
-        return false;
-    }
+  
+    
 }
-  public function getTasks() {
-      $sql = "SELECT * FROM tasks";
-      $stmt = $this->connection->prepare($sql);
-      $stmt->execute();
-      return $stmt->fetchAll();
-  }
-}
-
 
 // --------------------------------- Classes tasks by types ----------------------------------
 
 class BasicTask extends Task {
   protected $taskType = 'Basic';
-
 }
 
 class BugTask extends Task {
@@ -155,20 +205,39 @@ class BugTask extends Task {
 
 class FeatureTask extends Task {
   protected $taskType = 'Feature';
+};
+
+// -------------------------------------- Add new Task -----------------------------------
+
+if(isset($_POST['add'])){
+  $taskTitle = $_POST['title'];
+  $taskDescription = $_POST['content'];
+  $assignedTo = $_POST['assignedUser'];
+  $taskType = $_POST['taskType'];
+  if($taskType === 'basic'){
+    $task = new BasicTask($conn);
+    $task->addTask($taskTitle, $assignedTo, $taskDescription );
+  }
+  elseif($taskType === 'bug'){
+    $task = new BugTask($conn);
+    $task->addTask($taskTitle, $assignedTo, $taskDescription );
+  }
+  else{
+    $task = new FeatureTask($conn);
+    $task->addTask($taskTitle, $assignedTo, $taskDescription );
+  }
+
 }
+// ------------------------------------- Update status -----------------------------------
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['task_id'], $_POST['status'])) {
+  $taskId = $_POST['task_id'];
+  $newStatus = $_POST['status'];
 
-// ------------------ Insert tasks by class of the type of task that we want ---------------------
+  $userTask = new Task($conn);
+  $updateResult = $userTask->updateTaskStatus($taskId, $newStatus);
 
-// $task1 = new BasicTask($conn);
-// $task1->addTask('task 1 basic', 40, 'Lorem ipsum dolor sit amet consectetur adipisicing elit.');
-
-// $task2 = new BugTask($conn);
-// $task2->addTask('task 2 bug', 41, 'Lorem ipsum dolor sit amet consectetur adipisicing elit.');
-
-// $task3 = new FeatureTask($conn);
-// $task3->addTask('task 3 feature', 42, 'Lorem ipsum dolor sit amet consectetur adipisicing elit.');
-
-
-
-
-
+  if ($updateResult) {
+      header("Location: dts.php?task_id=" . $taskId);
+      exit();
+  }
+}

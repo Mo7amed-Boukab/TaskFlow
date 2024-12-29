@@ -1,4 +1,8 @@
-<?php require_once 'classes.php';?>
+<?php require_once 'classes.php';
+      $allTasks = new Task($conn);
+      $tasks = $allTasks->getTasks();
+
+?>
 <!DOCTYPE html>
 <html lang="fr">
 <head>
@@ -11,52 +15,62 @@
     <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-<div class='alert error'></div>
-<div class="formContainer" id="loginUser" style="display: none;">
-    <form action="" method="POST">
-        <i class="fa-solid fa-rectangle-xmark close closeU"></i>
-        <h1 class="formTitle">Login User</h1>
-        
-        <input type="text" class="input" name="name" placeholder="name" required>
-
-        <button type="submit" name="login" class="addBtn">Login</button>
-    </form>   
-</div>
-
-<div class="formContainer" id="formContainer" style="display: none;">
-    <form action="" method="POST">
-        <i class="fa-solid fa-rectangle-xmark close closeF"></i>
-        <h1 class="formTitle">Task Form</h1>
-        
-        <input type="text" class="input" name="title" placeholder="Title" required>
-        
-        <select name="taskType" class="input" required>
-            <option value="">Task Type</option>
-            <option value="basic">Basic</option>
-            <option value="bug">Bug</option>
-            <option value="feature">Feature</option>
-        </select>
-
-        <select name="assignedUser" class="input" required>
-            <option value="">Assigne to </option>
+    <!-- ____________________________ Login ____________________________ -->
+  <div class="formContainer" id="loginUser" style="display: none;">
+      <form action="" method="POST">
+          <i class="fa-solid fa-rectangle-xmark close closeL"></i>
+          <h1 class="formTitle">Login User</h1>
           
-            <option value="user1">mohamed</option>
-            <option value="user2">salah</option>
-        </select>
-        
-        <textarea name="content" class="textarea" rows="6" placeholder="Write here task description" required></textarea>
-        
-        <button type="submit" name="add" class="addBtn">Add Task</button>
-    </form>   
-</div>
+          <input type="text" class="input" name="name" placeholder="name" required>
+
+          <button type="submit" name="login" class="addBtn">Login</button>
+      </form>   
+  </div>
+  <!-- ____________________________ Register ____________________________ -->
+  <div class="formContainer" id="registerUser" style="display: none;">
+      <form action="" method="POST">
+          <i class="fa-solid fa-rectangle-xmark close closeR"></i>
+          <h1 class="formTitle">Register</h1>
+          
+          <input type="text" class="input" name="username" placeholder="name" required>
+
+          <button type="submit" name="register" class="addBtn register" >Register</button>
+      </form>   
+  </div>
+  <!-- ____________________________ Form Add Task ____________________________ -->
+  <!-- <div class="formContainer" id="formContainer" style="display: none;">
+      <form action="" method="POST">
+          <i class="fa-solid fa-rectangle-xmark close closeF"></i>
+          <h1 class="formTitle">Task Form</h1>
+          
+          <input type="text" class="input" name="title" placeholder="Title" required>
+          
+          <select name="taskType" class="input" required>
+              <option value="">Task Type</option>
+              <option value="basic">Basic</option>
+              <option value="bug">Bug</option>
+              <option value="feature">Feature</option>
+          </select>
+
+          <select name="assignedUser" class="input" required>
+              <option value="">Assigne to </option>
+              <option value="user1">mohamed</option>
+              <option value="user2">salah</option>
+          </select>
+          
+          <textarea name="content" class="textarea" rows="6" placeholder="Write here task description" required></textarea>
+          
+          <button type="submit" name="add" class="addBtn">Add Task</button>
+      </form>   
+  </div> -->
       
-    <div class="container">
+  <div class="container">
         <header>
             <div class="header-left">
                 <h1>Task Flow</h1>
             </div>
             <div class="header-right">
-                <button class="user-btn" id="btnUsers">users</button>
+                <button class="user-btn" id="btnLogin">Login</button>
             </div>
         </header>
 
@@ -64,101 +78,129 @@
             <div class="search-container">
                 <input type="search" placeholder="Search">
             </div>
-            <button class="add-task-btn" id="btnAddTask">Add Task +</button>
+            <button class="add-task-btn" id="btnAddUser">Add User +</button>
         </div>
 
-        <div class="tasks-grid">
-            <!-- To Do Column -->
-            <div class="task-column">
-                <h2>To do</h2>
-                    <div class="task-card">
-                        <div class="task-header">
-                            <div class="task-type">
-                                <span class="dot"></span>
-                                <span>TYPE OF TACHE</span>
-                            </div>
-                            <button class="more-btn"><i class="fas fa-ellipsis-h"></i></button>
-                        </div>
-                        <h3>Tache Title</h3>
-                        <p>User assigne</p>
-                    </div>
-                
-            </div>
+      <div class="tasks-grid">
 
-            <!-- In Progress Column -->
             <div class="task-column">
-                <h2>In progress</h2>
-                <!-- Task cards -->
-                <div class="task-card">
-                    <div class="task-header">
-                        <div class="task-type">
-                            <span class="dot"></span>
-                            <span>TYPE OF TACHE</span>
-                        </div>
-                        <button class="more-btn"><i class="fas fa-ellipsis-h"></i></button>
-                    </div>
-                    <h3>Tache Title</h3>
-                    <p>User assigne</p>
-                </div>
-                <div class="task-card">
-                        <div class="task-header">
-                            <div class="task-type">
-                                <span class="dot"></span>
-                                <span>TYPE OF TACHE</span>
-                            </div>
-                            <button class="more-btn"><i class="fas fa-ellipsis-h"></i></button>
-                        </div>
-                        <h3>Tache Title</h3>
-                        <p>User assigne</p>
-                    </div>
+              <h2>To Do</h2>
+                <?php foreach ($tasks as $task):
+                  if ($task['status'] === 'To Do'): ?>
+                  
+                              <div class="task-card">
+                                  <div class="task-header">
+                                      <div class="task-type">
+                                        <?php if ($task['type'] === 'Basic'): ?>
+                                          <span class="dot yellow"></span>
+                                          <span><?php echo $task['type']?></span>
+                                        <?php elseif ($task['type'] === 'Bug'): ?>
+                                          <span class="dot red"></span>
+                                          <span><?php echo $task['type']?></span>
+                                        <?php elseif ($task['type'] === 'Feature'): ?>
+                                          <span class="dot green"></span>
+                                          <span><?php echo $task['type']?></span>
+                                        <?php endif; ?>
+                                      </div>
+                                      <button class="more-btn"><i class="fas fa-ellipsis-h"></i></button>
+                                  </div>
+                                  <h3><?php echo $task['title'] ?></h3>
+                                  <p><span class='assignedto'>Assigned to :</span> <?php echo $task['name'] ?></p>
+                              </div>
                     
+                <?php endif; 
+                endforeach; ?> 
+            </div> 
+             <!-- End To Do Column________________________________________________________________________________________________________________ -->        
+            <div class="task-column">
+                <h2>In Progress</h2>  
+                <?php foreach ($tasks as $task):
+                    if ($task['status'] === 'In Progress'): ?>
+                              
+                          <div class="task-card">
+                              <div class="task-header">
+                                  <div class="task-type">
+                                    <?php if ($task['type'] === 'Basic'): ?>
+                                      <span class="dot yellow"></span>
+                                      <span><?php echo $task['type']?></span>
+                                    <?php elseif ($task['type'] === 'Bug'): ?>
+                                      <span class="dot red"></span>
+                                      <span><?php echo $task['type']?></span>
+                                    <?php elseif ($task['type'] === 'Feature'): ?>
+                                      <span class="dot green"></span>
+                                      <span><?php echo $task['type']?></span>
+                                    <?php endif; ?>
+                                  </div>
+                                  <button class="more-btn"><i class="fas fa-ellipsis-h"></i></button>
+                              </div>
+                              <h3><?php echo $task['title'] ?></h3>
+                              <p><span class='assignedto'>Assigned to :</span> <?php echo $task['name'] ?></p>
+                          </div>
+                  
+                <?php endif; 
+                endforeach; ?>  
+              
             </div>
-
-            <!-- Done Column -->
+            <!-- End In Progress Column _______________________________________________________________________________________________________________ -->
             <div class="task-column">
                 <h2>Done</h2>
-                <!-- Task cards -->
-                <div class="task-card">
-                        <div class="task-header">
-                            <div class="task-type">
-                                <span class="dot"></span>
-                                <span>TYPE OF TACHE</span>
-                            </div>
-                            <button class="more-btn"><i class="fas fa-ellipsis-h"></i></button>
-                        </div>
-                        <h3>Tache Title</h3>
-                        <p>User assigne</p>
-                    </div>
-                  
+                <?php foreach ($tasks as $task):
+                  if ($task['status'] === 'Done'): ?>
+
+                          <div class="task-card">
+                              <div class="task-header">
+                                  <div class="task-type">
+                                    <?php if ($task['type'] === 'Basic'): ?>
+                                      <span class="dot yellow"></span>
+                                      <span><?php echo $task['type']?></span>
+                                    <?php elseif ($task['type'] === 'Bug'): ?>
+                                      <span class="dot red"></span>
+                                      <span><?php echo $task['type']?></span>
+                                    <?php elseif ($task['type'] === 'Feature'): ?>
+                                      <span class="dot green"></span>
+                                      <span><?php echo $task['type']?></span>
+                                    <?php endif; ?>
+                                  </div>
+                                  <button class="more-btn"><i class="fas fa-ellipsis-h"></i></button>
+                              </div>
+                              <h3><?php echo $task['title'] ?></h3>
+                              <p><span class='assignedto'>Assigned to :</span> <?php echo $task['name'] ?></p>
+                          </div>
+                    
+                <?php endif; 
+                endforeach; ?>               
             </div>
-        </div>
-    </div>
+            <!-- End Done Column _______________________________________________________________________________________________________________ -->
+      </div> <!-- End tasks-grid -->
+  </div>
 
     <script>
-            let btnAddTask = document.getElementById('btnAddTask');
-            let formContainer = document.getElementById('formContainer');
-            let closeAddForm = document.querySelector('.closeF');
-            let closeUsersForm = document.querySelector('.closeU');
+          let btnAddUser = document.getElementById('btnAddUser');
+          let registerUser = document.getElementById('registerUser');
 
-            btnAddTask.addEventListener('click', () => {
+            btnAddUser.addEventListener('click', () => {
               console.log('clicked');
-              formContainer.style.display = "block";
-          });
+              
+              registerUser.style.display = "block";
+            });
 
-          let btnUsers = document.getElementById('btnUsers');
+          let closeRegisterForm = document.querySelector('.closeR');
+              closeRegisterForm.addEventListener('click', () => {
+                  registerUser.style.display = "none";
+              });
+
+          let btnLogin = document.getElementById('btnLogin');
           let loginUser = document.getElementById('loginUser');
 
-          btnUsers.addEventListener('click', () => {
-              loginUser.style.display = "block";
-          });
-
-          closeUsersForm.addEventListener('click', () => {
-            loginUser.style.display = "none";
+              btnLogin.addEventListener('click', () => {
+                console.log('clicked');
+                  loginUser.style.display = "block";
               });
-          closeAddForm.addEventListener('click', () => {
-            formContainer.style.display = "none";
+          let closeLoginForm = document.querySelector('.closeL');
+              closeLoginForm.addEventListener('click', () => {
+                  loginUser.style.display = "none";
               });
-
+      
 
     </script>
 </body>
